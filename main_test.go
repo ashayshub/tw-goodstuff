@@ -1,8 +1,8 @@
 package main_test
 
 import (
+	"os"
 	"testing"
-	"github.com/ashayshub/tw-goodstuff"
 )
 
 func TestMain(m *testing.M) {
