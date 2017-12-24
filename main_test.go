@@ -9,11 +9,27 @@ import (
 	"github.com/ashayshub/tw-goodstuff"
 )
 
-func TestHTTPEndPoint(t *testing.T) {
-	ep := "http://" + main.HostAddr + ":" + main.HostPort
-	
-	if _, err := http.Get(ep); err != nil {
-		fmt.Println("Error: ", err)
+const ep string = "http://" + main.HostAddr + ":" + main.HostPort
+
+func TestGetMostFavEp(t *testing.T){
+	epfv := ep + "/fav"
+	if _, er := http.Get(epfv); er != nil {
+		fmt.Println("Error: ", er)
+		t.Fail()
+	}
+}
+
+func TestGetMostRtEp(t *testing.T){
+	eprt := ep + "/rt"
+	if _, er := http.Get(eprt); er != nil {
+		fmt.Println("Error: ", er)
+		t.Fail()
+	}
+}
+
+func TestGetSlashEp(t *testing.T) {
+	if _, er := http.Get(ep); er != nil {
+		fmt.Println("Error: ", er)
 		t.Fail()
 	}
 }
