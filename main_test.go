@@ -1,33 +1,36 @@
-package main
+package main_test
 
 import (
 	"os"
 	"testing"
+
+	"github.com/ashayshub/tw-goodstuff"
 )
 
 func TestParseArgs(t *testing.T) {
-	u := userDetails{name: "ashay"}
-	u.parseArgs()
+	u := main.UserProperty{Name: "ashay"}
+	u.ParseArgs()
 }
 
 func TestValidateArgs(t *testing.T) {
-	u := userDetails{name: "ashay"}
-	if ok := u.validateArgs(); !ok {
+	u := main.UserProperty{Name: "ashay"}
+	usage := u.ParseArgs()
+	if ok := u.ValidateArgs(&usage); !ok {
 		t.Fail()
 	}
 }
 
 func TestOAuth(t *testing.T) {
-	u := userDetails{name: "ashay"}
-	if _, ok := u.oAuth(); !ok {
+	u := main.UserProperty{Name: "ashay"}
+	if _, ok := u.OAuth(); !ok {
 		t.Fail()
 	}
 }
 
 func BenchmarkOAuth(b *testing.B) {
-	u := userDetails{name: "ashay"}
+	u := main.UserProperty{Name: "ashay"}
 	for i := 0; i < b.N; i++ {
-		u.oAuth()
+		u.OAuth()
 	}
 }
 
