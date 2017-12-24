@@ -11,23 +11,26 @@ const (
 	EndPoint string = "http://" + HostAddr + ":" + HostPort
 )
 
+var (
+	ActiveRoute [3]string = [3]string{"/fav", "/rt", "/"}
+)
+
 func main() {
-	var hd = handler{}
-	var ar = [3]string {"/fav", "/rt", "/"}
+	var hd = Handler{}
 
 	fmt.Println(HostAddr, HostPort)
-	for _, route := range ar {
+	for _, route := range ActiveRoute {
 		http.Handle(route, hd)
 	}
-	http.ListenAndServe(HostAddr + ":" + HostPort, nil)
+	http.ListenAndServe(HostAddr+":"+HostPort, nil)
 }
 
-type handler struct {}
+type Handler struct{}
 
-func (h handler)  ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
 	case "/fav":
-		resp, statusCode, ok := FavPage(req); 
+		resp, statusCode, ok := FavPage(req)
 		if !ok {
 			sendInternalError(w)
 		}
@@ -35,7 +38,7 @@ func (h handler)  ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(resp))
 
 	case "/rt":
-		resp, statusCode, ok := RTPage(req); 
+		resp, statusCode, ok := RTPage(req)
 		if !ok {
 			sendInternalError(w)
 		}
@@ -43,41 +46,41 @@ func (h handler)  ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(resp))
 
 	case "/":
-		resp, statusCode, ok := HomePage(req);
+		resp, statusCode, ok := HomePage(req)
 		if !ok {
 			sendInternalError(w)
 		}
 		w.WriteHeader(statusCode)
-		w.Write([]byte(resp))		
-
-	default: 
+		w.Write([]byte(resp))
+	default:
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Not Found: " + req.URL.Path))
+		fmt.Println(w)
 	}
 }
 
-func sendInternalError(w http.ResponseWriter){
+func sendInternalError(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("Internal Server Error"))
 }
 
 func FavPage(req *http.Request) (resp string, statusCode int, ok bool) {
 	if req.Method == http.MethodGet {
-		return  "Fav Page: " + req.URL.Path, http.StatusOK, true
+		return req.URL.Path, http.StatusOK, true
 	}
-	return "Not Found", http.StatusNotFound , true
+	return "Not Found", http.StatusNotFound, true
 }
 
 func RTPage(req *http.Request) (resp string, statusCode int, ok bool) {
 	if req.Method == http.MethodGet {
-		return  "RT Page: " + req.URL.Path, http.StatusOK, true
+		return req.URL.Path, http.StatusOK, true
 	}
-	return "Not Found", http.StatusNotFound , true
+	return "Not Found", http.StatusNotFound, true
 }
 
 func HomePage(req *http.Request) (resp string, statusCode int, ok bool) {
 	if req.Method == http.MethodGet {
-		return  "Home Page: " + req.URL.Path, http.StatusOK, true
+		return req.URL.Path, http.StatusOK, true
 	}
-	return "Not Found", http.StatusNotFound , true
+	return "Not Found", http.StatusNotFound, true
 }
