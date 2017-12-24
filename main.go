@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -14,6 +15,14 @@ func main() {
 		log.Fatal("Validation failed")
 	}
 	fmt.Println("Your username is", strings.ToLower(user.name))
+}
+
+func usage() {
+	usageText := `Usage:
+%v: --username <username> -p[enter]
+<password>
+`
+	fmt.Printf(usageText, os.Args[0])
 }
 
 type userDetails struct {
@@ -34,6 +43,8 @@ func (u *userDetails) parseArgs() {
 
 func (u *userDetails) validateArgs() (ok bool) {
 	if u.name == "" {
+		usage()
+		log.Print("--username flag cannot not be empty")
 		return false
 	}
 	return true
