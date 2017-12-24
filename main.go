@@ -22,30 +22,32 @@ func main() {
 	http.ListenAndServe(HostAddr + ":" + HostPort, nil)
 }
 
-type handler struct {
-}
+type handler struct {}
 
 func (h handler)  ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
 	case "/fav":
-		resp, ok := FavPage(req); 
+		resp, statusCode, ok := FavPage(req); 
 		if !ok {
 			sendInternalError(w)
 		}
+		w.WriteHeader(statusCode)
 		w.Write([]byte(resp))
 
 	case "/rt":
-		resp, ok := RTPage(req); 
+		resp, statusCode, ok := RTPage(req); 
 		if !ok {
 			sendInternalError(w)
 		}
+		w.WriteHeader(statusCode)
 		w.Write([]byte(resp))
 
 	case "/":
-		resp, ok := HomePage(req);
+		resp, statusCode, ok := HomePage(req);
 		if !ok {
 			sendInternalError(w)
 		}
+		w.WriteHeader(statusCode)
 		w.Write([]byte(resp))		
 
 	default: 
@@ -59,23 +61,23 @@ func sendInternalError(w http.ResponseWriter){
 	w.Write([]byte("Internal Server Error"))
 }
 
-func FavPage(req *http.Request) (resp string, ok bool) {
+func FavPage(req *http.Request) (resp string, statusCode int, ok bool) {
 	if req.Method == http.MethodGet {
-		return  "Fav Page: " + req.URL.Path, true
+		return  "Fav Page: " + req.URL.Path, http.StatusOK, true
 	}
-	return "", false
+	return "Not Found", http.StatusNotFound , true
 }
 
-func RTPage(req *http.Request) (resp string, ok bool) {
+func RTPage(req *http.Request) (resp string, statusCode int, ok bool) {
 	if req.Method == http.MethodGet {
-		return  "RT Page: " + req.URL.Path, true
+		return  "RT Page: " + req.URL.Path, http.StatusOK, true
 	}
-	return "", false
+	return "Not Found", http.StatusNotFound , true
 }
 
-func HomePage(req *http.Request) (resp string, ok bool) {
+func HomePage(req *http.Request) (resp string, statusCode int, ok bool) {
 	if req.Method == http.MethodGet {
-		return  "Home Page: " + req.URL.Path, true
+		return  "Home Page: " + req.URL.Path, http.StatusOK, true
 	}
-	return "", false
+	return "Not Found", http.StatusNotFound , true
 }
