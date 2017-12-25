@@ -16,13 +16,13 @@ var (
 )
 
 func main() {
-	var hd = Handler{}
-
-	fmt.Println(HostAddr, HostPort)
-	for _, route := range ActiveRoute {
-		http.Handle(route, hd)
+	var hd = Handler{}	
+	s := &http.Server{
+		Addr: HostAddr + ":" + HostPort,
+		Handler: hd,
 	}
-	http.ListenAndServe(HostAddr+":"+HostPort, nil)
+	fmt.Println("Listening on host:", HostAddr, "Port: ", HostPort)
+	s.ListenAndServe()
 }
 
 type Handler struct{}
@@ -55,7 +55,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	default:
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Not Found: " + req.URL.Path))
-		fmt.Println(w)
 	}
 }
 
