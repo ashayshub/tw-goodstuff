@@ -18,9 +18,9 @@ var (
 )
 
 func main() {
-	var hd = Handler{}	
+	var hd = Handler{}
 	s := &http.Server{
-		Addr: HostAddr + ":" + HostPort,
+		Addr:    HostAddr + ":" + HostPort,
 		Handler: hd,
 	}
 	fmt.Printf("Starting on host: %v:%v\n", HostAddr, HostPort)

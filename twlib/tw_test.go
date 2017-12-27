@@ -1,10 +1,10 @@
 package tw_test
 
 import (
-	"testing"
+	"github.com/ashayshub/tw-goodstuff/twlib"
 	"net/http"
 	"net/http/httptest"
-	"github.com/ashayshub/tw-goodstuff/twlib"
+	"testing"
 )
 
 func TestFavPage(t *testing.T) {
