@@ -35,6 +35,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		resp, statusCode, ok := tw.FavPage(req)
 		if !ok {
 			sendInternalError(w)
+			return
 		}
 		w.WriteHeader(statusCode)
 		w.Write([]byte(resp))
@@ -43,6 +44,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		resp, statusCode, ok := tw.RTPage(req)
 		if !ok {
 			sendInternalError(w)
+			return
 		}
 		w.WriteHeader(statusCode)
 		w.Write([]byte(resp))
@@ -51,6 +53,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		resp, statusCode, ok := tw.HomePage(req)
 		if !ok {
 			sendInternalError(w)
+			return
 		}
 		w.WriteHeader(statusCode)
 		w.Write([]byte(resp))
