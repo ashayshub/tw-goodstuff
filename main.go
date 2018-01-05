@@ -33,7 +33,7 @@ func main() {
 type Handler struct{}
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	configFile := "./conf.yaml"
+	configFile := "./conf.yaml.example"
 	var app = &tw.TwApp{}
 
 	data, err := ioutil.ReadFile(configFile)
