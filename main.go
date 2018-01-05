@@ -34,9 +34,9 @@ type Handler struct{}
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	configFile := "./conf.yaml.example"
-	var app = &tw.TwApp{}
-
+	app := &tw.TwApp{}
 	data, err := ioutil.ReadFile(configFile)
+
 	if err != nil {
 		log.Fatalf("Fatal error: %v\n", err)
 	}
@@ -44,11 +44,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if err := yaml.Unmarshal(data, app); err != nil {
 		log.Fatalf("Fatal error: %v\n", err)
 	}
-	fmt.Printf("%#v\n", app)
 
 	switch req.URL.Path {
 	case "/fav":
-		resp, statusCode, ok := app.FavPage(req)
+		resp, statusCode, ok := tw.FavPage(req)
 		if !ok {
 			sendInternalError(w)
 			return
@@ -57,7 +56,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(resp))
 
 	case "/rt":
-		resp, statusCode, ok := app.RTPage(req)
+		resp, statusCode, ok := tw.RTPage(req)
 		if !ok {
 			sendInternalError(w)
 			return
@@ -66,7 +65,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(resp))
 
 	case "/":
-		resp, statusCode, ok := app.HomePage(req)
+		resp, statusCode, ok := tw.HomePage(req)
 		if !ok {
 			sendInternalError(w)
 			return
