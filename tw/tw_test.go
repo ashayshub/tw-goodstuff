@@ -9,27 +9,27 @@ import (
 )
 
 func TestFavPage(t *testing.T) {
-	a := tw.TwApp{}
+	// a := tw.TwApp{}
 	req := httptest.NewRequest(http.MethodGet, "http://locahost:8333/fav", nil)
-	_, status, ok := a.FavPage(req)
+	_, status, ok := tw.FavPage(req)
 	if status != http.StatusOK || !ok {
 		t.Fail()
 	}
 }
 
 func TestRTPage(t *testing.T) {
-	a := tw.TwApp{}
+	// a := tw.TwApp{}
 	req := httptest.NewRequest(http.MethodGet, "http://locahost:8333/rt", nil)
-	_, status, ok := a.RTPage(req)
+	_, status, ok := tw.RTPage(req)
 	if status != http.StatusOK || !ok {
 		t.Fail()
 	}
 }
 
 func TestHomePage(t *testing.T) {
-	a := tw.TwApp{}
+	// a := tw.TwApp{}
 	req := httptest.NewRequest(http.MethodGet, "http://locahost:8333/", nil)
-	_, status, ok := a.HomePage(req)
+	_, status, ok := tw.HomePage(req)
 	if status != http.StatusOK || !ok {
 		t.Fail()
 	}
