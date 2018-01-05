@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 
-	"github.com/ashayshub/tw-goodstuff/twlib"
+	"github.com/ashayshub/tw-goodstuff/tw"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -30,9 +33,22 @@ func main() {
 type Handler struct{}
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	configFile := "./conf.yaml"
+	var app = &tw.TwApp{}
+
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		log.Fatalf("Fatal error: %v\n", err)
+	}
+
+	if err := yaml.Unmarshal(data, app); err != nil {
+		log.Fatalf("Fatal error: %v\n", err)
+	}
+	fmt.Printf("%#v\n", app)
+
 	switch req.URL.Path {
 	case "/fav":
-		resp, statusCode, ok := tw.FavPage(req)
+		resp, statusCode, ok := app.FavPage(req)
 		if !ok {
 			sendInternalError(w)
 			return
@@ -41,7 +57,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(resp))
 
 	case "/rt":
-		resp, statusCode, ok := tw.RTPage(req)
+		resp, statusCode, ok := app.RTPage(req)
 		if !ok {
 			sendInternalError(w)
 			return
@@ -50,7 +66,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(resp))
 
 	case "/":
-		resp, statusCode, ok := tw.HomePage(req)
+		resp, statusCode, ok := app.HomePage(req)
 		if !ok {
 			sendInternalError(w)
 			return
