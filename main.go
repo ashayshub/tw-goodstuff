@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/ashayshub/tw-goodstuff/tw"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -33,53 +31,103 @@ func main() {
 type Handler struct{}
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	configFile := "./conf.yaml.example"
 	app := &tw.TwApp{}
-	data, err := ioutil.ReadFile(configFile)
+	app.ConfigFile = "./conf.yaml.example"
+	cr := &ContentResponse{}
 
-	if err != nil {
-		log.Fatalf("Fatal error: %v\n", err)
+	//Startup errors
+	if err := app.LoadConfig(); err != nil {
+		log.Fatal(err)
 	}
-
-	if err := yaml.Unmarshal(data, app); err != nil {
-		log.Fatalf("Fatal error: %v\n", err)
+	if err := app.Auth(); err != nil {
+		log.Fatal(err)
 	}
 
 	switch req.URL.Path {
 	case "/fav":
-		resp, statusCode, ok := tw.FavPage(req)
-		if !ok {
-			sendInternalError(w)
+		if ok := cr.FavPage(w, req); !ok {
+			cr.SendInternalError(w)
 			return
 		}
-		w.WriteHeader(statusCode)
-		w.Write([]byte(resp))
 
 	case "/rt":
-		resp, statusCode, ok := tw.RTPage(req)
-		if !ok {
-			sendInternalError(w)
+		if ok := cr.RTPage(w, req); !ok {
+			cr.SendInternalError(w)
 			return
 		}
-		w.WriteHeader(statusCode)
-		w.Write([]byte(resp))
 
 	case "/":
-		resp, statusCode, ok := tw.HomePage(req)
-		if !ok {
-			sendInternalError(w)
+		if ok := cr.HomePage(w, req); !ok {
+			cr.SendInternalError(w)
 			return
 		}
-		w.WriteHeader(statusCode)
-		w.Write([]byte(resp))
 
 	default:
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Not Found: " + req.URL.Path))
+		cr.SendNotFound(w, req.URL.Path)
 	}
 }
 
-func sendInternalError(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte("Internal Server Error"))
+type ContentResponse struct {
+	Status int
+	Body   string
+	Hdr    http.Header
+}
+
+func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request) (ok bool) {
+	if req.Method == http.MethodGet {
+		cr.Body = req.URL.Path
+		cr.Status = http.StatusOK
+		cr.Hdr = w.Header()
+		return cr.WriteHTTPResponse(w)
+	}
+	return cr.SendNotFound(w, req.URL.Path)
+}
+
+func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request) (ok bool) {
+	if req.Method == http.MethodGet {
+		cr.Body = req.URL.Path
+		cr.Status = http.StatusOK
+		cr.Hdr = w.Header()
+		return cr.WriteHTTPResponse(w)
+	}
+	return cr.SendNotFound(w, req.URL.Path)
+}
+
+func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request) (ok bool) {
+	if req.Method == http.MethodGet {
+		cr.Status = 302
+		cr.Hdr = w.Header()
+		cr.Hdr.Add("Location", "/rt")
+		cr.Body = ""
+		return cr.WriteHTTPResponse(w)
+	}
+	return cr.SendNotFound(w, req.URL.Path)
+}
+
+func (cr *ContentResponse) SendNotFound(w http.ResponseWriter, url string) (ok bool) {
+	cr.Status = http.StatusNotFound
+	cr.Body = "Not Found: " + url
+	cr.Hdr = w.Header()
+	cr.WriteHTTPResponse(w)
+	return false
+}
+
+func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
+	cr.Status = http.StatusInternalServerError
+	cr.Body = "Internal Server Error"
+	cr.Hdr = w.Header()
+	cr.WriteHTTPResponse(w)
+	return true
+}
+
+func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
+	w.WriteHeader(cr.Status)
+	if len(cr.Hdr) != 0 {
+		if err := cr.Hdr.Write(w); err != nil {
+			log.Printf("Could not write Header: %#v", cr.Hdr)
+			return cr.SendInternalError(w)
+		}
+	}
+	w.Write([]byte(cr.Body))
+	return true
 }
