@@ -97,11 +97,11 @@ func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request, app 
 func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodGet {
 		tmplFile := "./tmpl/home.tmpl"
+		cr.Hdr = w.Header()
 		err := app.Auth()
 		if err == nil {
 			cr.Status = 302
-			cr.Hdr = w.Header()
-			cr.Hdr.Add("Location", "/rt")
+			cr.Hdr.Set("Location", "/rt")
 			cr.Body.Write([]byte{})
 			return cr.WriteHTTPResponse(w)
 		}
@@ -111,6 +111,7 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 			log.Printf("Errors: %v, %v", err2, err)
 			cr.SendInternalError(w)
 		}
+		cr.Hdr.Set("Content-Type", "text/html")
 		cr.Status = http.StatusOK
 		return cr.WriteHTTPResponse(w)
 	}
