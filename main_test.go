@@ -75,7 +75,7 @@ func TestServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, main.EndPoint+route, nil)
 		resp := httptest.NewRecorder()
 		hd.ServeHTTP(resp, req)
-		if resp.Code != http.StatusOK {
+		if !(resp.Code == http.StatusOK || resp.Code == http.StatusFound) {
 			fmt.Printf("%v: Status: %v, Body: %v, Result: %v\n", route, resp.Code, resp.Body.String(), resp.Result())
 			t.Fail()
 		}
