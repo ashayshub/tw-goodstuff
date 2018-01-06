@@ -96,8 +96,8 @@ func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request, app 
 
 func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodGet {
-		tmplFile := "./tmpl/home.tmpl"
 		cr.Hdr = w.Header()
+		tmplFile := "./tmpl/home.tmpl"
 		err := app.Auth()
 		if err == nil {
 			cr.Status = 302
@@ -106,13 +106,18 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 			return cr.WriteHTTPResponse(w)
 		}
 
-		err2 := cr.ParseTemplate(tmplFile)
+		dat, err2 := ioutil.ReadFile(tmplFile)
 		if err2 != nil {
-			log.Printf("Errors: %v, %v", err2, err)
+			log.Printf("Method: Get, Error reading template file. Error: %v", err2)
+			return cr.SendInternalError(w)
+		}
+
+		err3 := cr.ParseTemplate(dat, nil)
+		if err3 != nil {
+			log.Printf("Errors: %v, %v", err3, err2)
 			cr.SendInternalError(w)
 		}
-		cr.Hdr.Set("Content-Type", "text/html")
-		cr.Status = http.StatusOK
+
 		return cr.WriteHTTPResponse(w)
 	}
 	return cr.SendNotFound(w, req.URL.Path)
@@ -121,42 +126,32 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 func (cr *ContentResponse) SendNotFound(w http.ResponseWriter, url string) (ok bool) {
 	cr.Status = http.StatusNotFound
 	cr.Body.Write([]byte("Not Found: " + url))
-	cr.Hdr = w.Header()
 	return cr.WriteHTTPResponse(w)
 }
 
 func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
 	cr.Status = http.StatusInternalServerError
 	cr.Body.Write([]byte("Internal Server Error"))
-	cr.Hdr = w.Header()
 	return cr.WriteHTTPResponse(w)
 }
 
 func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
+	log.Println(cr.Body)
 	w.WriteHeader(cr.Status)
-	if len(cr.Hdr) != 0 {
-		if err := cr.Hdr.Write(w); err != nil {
-			log.Printf("Could not write Header: %#v", cr.Hdr)
-		}
-	}
-	if _, err := cr.Body.WriteTo(w); err != nil {
-		log.Printf("Could not write Body: %#v", cr.Body)
-	}
+	cr.Body.WriteTo(w)
 	return true
 }
 
-func (cr *ContentResponse) ParseTemplate(tmplFile string) (err error) {
-	dat, err := ioutil.ReadFile(tmplFile)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Method: Get, Error reading template file"))
-	}
+func (cr *ContentResponse) ParseTemplate(b []byte, data interface{}) (err error) {
 
-	tmpl, err := template.New("HTML").Parse(string(dat))
+	tmpl, err := template.New("HTML").Parse(string(b))
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Method: Get, Error Parsing template file"))
 	}
 
-	err = tmpl.Execute(&cr.Body, nil)
+	cr.Status = http.StatusOK
+	cr.Hdr.Set("Content-Type", "text/html")
+	err = tmpl.Execute(&cr.Body, data)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Method: Get, Error Executing template file"))
 	}

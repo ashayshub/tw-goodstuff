@@ -73,6 +73,9 @@ func TestSendNotFound(t *testing.T) {
 	}
 }
 
+func TestParseTemplate(t *testing.T) {
+}
+
 func TestServeHTTP(t *testing.T) {
 	hd := main.Handler{}
 	for _, route := range main.ActiveRoute {

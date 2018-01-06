@@ -43,5 +43,7 @@ func (t *TwApp) Auth() error {
 
 	httpClient := config.Client(oauth2.NoContext)
 	twitter.NewClient(httpClient)
+
 	return errors.New("twitter  error")
+	// return nil
 }
