@@ -32,7 +32,7 @@ func TestHomePage(t *testing.T) {
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 	req := httptest.NewRequest(http.MethodGet, "http://localhost:8333/", nil)
-	if ok := cr.HomePage(w, req); cr.Status != http.StatusOK || !ok {
+	if ok := cr.HomePage(w, req); cr.Status != http.StatusFound || !ok {
 		t.Fail()
 	}
 }
