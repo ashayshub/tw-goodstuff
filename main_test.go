@@ -74,6 +74,12 @@ func TestSendNotFound(t *testing.T) {
 }
 
 func TestParseTemplate(t *testing.T) {
+	data := []byte("Hello Testing")
+	cr := &main.ContentResponse{}
+	cr.Hdr = make(http.Header)
+	if err := cr.ParseTemplate(data, nil); err != nil {
+		t.Fail()
+	}
 }
 
 func TestServeHTTP(t *testing.T) {

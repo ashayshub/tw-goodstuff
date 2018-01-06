@@ -136,7 +136,6 @@ func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
 }
 
 func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
-	log.Println(cr.Body)
 	w.WriteHeader(cr.Status)
 	cr.Body.WriteTo(w)
 	return true
