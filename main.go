@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/ashayshub/tw-goodstuff/tw"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -39,25 +43,22 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if err := app.LoadConfig(); err != nil {
 		log.Fatal(err)
 	}
-	if err := app.Auth(); err != nil {
-		log.Fatal(err)
-	}
 
 	switch req.URL.Path {
 	case "/fav":
-		if ok := cr.FavPage(w, req); !ok {
+		if ok := cr.FavPage(w, req, app); !ok {
 			cr.SendInternalError(w)
 			return
 		}
 
 	case "/rt":
-		if ok := cr.RTPage(w, req); !ok {
+		if ok := cr.RTPage(w, req, app); !ok {
 			cr.SendInternalError(w)
 			return
 		}
 
 	case "/":
-		if ok := cr.HomePage(w, req); !ok {
+		if ok := cr.HomePage(w, req, app); !ok {
 			cr.SendInternalError(w)
 			return
 		}
@@ -69,13 +70,13 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 type ContentResponse struct {
 	Status int
-	Body   string
+	Body   bytes.Buffer
 	Hdr    http.Header
 }
 
-func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request) (ok bool) {
+func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodGet {
-		cr.Body = req.URL.Path
+		cr.Body.Write([]byte(req.URL.Path))
 		cr.Status = http.StatusOK
 		cr.Hdr = w.Header()
 		return cr.WriteHTTPResponse(w)
@@ -83,9 +84,9 @@ func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request) (ok
 	return cr.SendNotFound(w, req.URL.Path)
 }
 
-func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request) (ok bool) {
+func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodGet {
-		cr.Body = req.URL.Path
+		cr.Body.Write([]byte(req.URL.Path))
 		cr.Status = http.StatusOK
 		cr.Hdr = w.Header()
 		return cr.WriteHTTPResponse(w)
@@ -93,12 +94,24 @@ func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request) (ok 
 	return cr.SendNotFound(w, req.URL.Path)
 }
 
-func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request) (ok bool) {
+func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodGet {
-		cr.Status = 302
-		cr.Hdr = w.Header()
-		cr.Hdr.Add("Location", "/rt")
-		cr.Body = ""
+		tmplFile := "./tmpl/home.tmpl"
+		err := app.Auth()
+		if err == nil {
+			cr.Status = 302
+			cr.Hdr = w.Header()
+			cr.Hdr.Add("Location", "/rt")
+			cr.Body.Write([]byte{})
+			return cr.WriteHTTPResponse(w)
+		}
+
+		err2 := cr.ParseTemplate(tmplFile)
+		if err2 != nil {
+			log.Printf("Errors: %v, %v", err2, err)
+			cr.SendInternalError(w)
+		}
+		cr.Status = http.StatusOK
 		return cr.WriteHTTPResponse(w)
 	}
 	return cr.SendNotFound(w, req.URL.Path)
@@ -106,7 +119,7 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request) (o
 
 func (cr *ContentResponse) SendNotFound(w http.ResponseWriter, url string) (ok bool) {
 	cr.Status = http.StatusNotFound
-	cr.Body = "Not Found: " + url
+	cr.Body.Write([]byte("Not Found: " + url))
 	cr.Hdr = w.Header()
 	cr.WriteHTTPResponse(w)
 	return false
@@ -114,7 +127,7 @@ func (cr *ContentResponse) SendNotFound(w http.ResponseWriter, url string) (ok b
 
 func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
 	cr.Status = http.StatusInternalServerError
-	cr.Body = "Internal Server Error"
+	cr.Body.Write([]byte("Internal Server Error"))
 	cr.Hdr = w.Header()
 	cr.WriteHTTPResponse(w)
 	return true
@@ -128,6 +141,28 @@ func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
 			return cr.SendInternalError(w)
 		}
 	}
-	w.Write([]byte(cr.Body))
+	if _, err := cr.Body.WriteTo(w); err != nil {
+		log.Printf("Could not write Body: %#v", cr.Body)
+		return cr.SendInternalError(w)
+	}
 	return true
+}
+
+func (cr *ContentResponse) ParseTemplate(tmplFile string) (err error) {
+	dat, err := ioutil.ReadFile(tmplFile)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Method: Get, Error reading template file"))
+	}
+
+	tmpl, err := template.New("HTML").Parse(string(dat))
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Method: Get, Error Parsing template file"))
+	}
+
+	err = tmpl.Execute(&cr.Body, nil)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Method: Get, Error Executing template file"))
+	}
+
+	return nil
 }

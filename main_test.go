@@ -8,31 +8,35 @@ import (
 	"testing"
 
 	main "github.com/ashayshub/tw-goodstuff"
+	"github.com/ashayshub/tw-goodstuff/tw"
 )
 
 func TestFavPage(t *testing.T) {
+	a := &tw.TwApp{}
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 	req := httptest.NewRequest(http.MethodGet, "http://localhost:8333/fav", nil)
-	if ok := cr.FavPage(w, req); cr.Status != http.StatusOK || !ok {
+	if ok := cr.FavPage(w, req, a); cr.Status != http.StatusOK || !ok {
 		t.Fail()
 	}
 }
 
 func TestRTPage(t *testing.T) {
+	a := &tw.TwApp{}
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 	req := httptest.NewRequest(http.MethodGet, "http://localhost:8333/rt", nil)
-	if ok := cr.RTPage(w, req); cr.Status != http.StatusOK || !ok {
+	if ok := cr.RTPage(w, req, a); cr.Status != http.StatusOK || !ok {
 		t.Fail()
 	}
 }
 
 func TestHomePage(t *testing.T) {
+	a := &tw.TwApp{}
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 	req := httptest.NewRequest(http.MethodGet, "http://localhost:8333/", nil)
-	if ok := cr.HomePage(w, req); cr.Status != http.StatusFound || !ok {
+	if ok := cr.HomePage(w, req, a); !(cr.Status == http.StatusFound || cr.Status == http.StatusOK) || !ok {
 		t.Fail()
 	}
 }
@@ -44,7 +48,7 @@ func TestWriteHTTPResponse(t *testing.T) {
 
 	cr.Hdr["TestKey"] = []string{"TestValue"}
 	cr.Status = 200
-	cr.Body = "200 Ok"
+	cr.Body.Write([]byte("200 Ok"))
 
 	if ok := cr.WriteHTTPResponse(w); !ok {
 		t.Fail()

@@ -43,13 +43,5 @@ func (t *TwApp) Auth() error {
 
 	httpClient := config.Client(oauth2.NoContext)
 	twitter.NewClient(httpClient)
-
-	// params := &twitter.UserShowParams{ScreenName: "golang"}
-	// if _, _, err := client.Users.Show(params); err != nil {
-	// 	return errors.Wrap(err, "Fatal error: Could not return User Show")
-	// }
-
-	// client.Timelines.HomeTimeline(&twitter.HomeTimelineParams{})
-
-	return nil
+	return errors.New("twitter  error")
 }
