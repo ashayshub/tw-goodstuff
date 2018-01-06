@@ -138,12 +138,10 @@ func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
 	if len(cr.Hdr) != 0 {
 		if err := cr.Hdr.Write(w); err != nil {
 			log.Printf("Could not write Header: %#v", cr.Hdr)
-			return cr.SendInternalError(w)
 		}
 	}
 	if _, err := cr.Body.WriteTo(w); err != nil {
 		log.Printf("Could not write Body: %#v", cr.Body)
-		return cr.SendInternalError(w)
 	}
 	return true
 }
