@@ -129,10 +129,7 @@ func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
 	cr.Status = http.StatusInternalServerError
 	cr.Body.Write([]byte("Internal Server Error"))
 	cr.Hdr = w.Header()
-	cr.WriteHTTPResponse(w)
-
-	// deliberate false return
-	return false
+	return cr.WriteHTTPResponse(w)
 }
 
 func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
