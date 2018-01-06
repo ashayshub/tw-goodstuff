@@ -122,8 +122,7 @@ func (cr *ContentResponse) SendNotFound(w http.ResponseWriter, url string) (ok b
 	cr.Status = http.StatusNotFound
 	cr.Body.Write([]byte("Not Found: " + url))
 	cr.Hdr = w.Header()
-	cr.WriteHTTPResponse(w)
-	return false
+	return cr.WriteHTTPResponse(w)
 }
 
 func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
@@ -131,7 +130,9 @@ func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
 	cr.Body.Write([]byte("Internal Server Error"))
 	cr.Hdr = w.Header()
 	cr.WriteHTTPResponse(w)
-	return true
+
+	// deliberate false return
+	return false
 }
 
 func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
