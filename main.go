@@ -112,12 +112,14 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 			return cr.SendInternalError(w)
 		}
 
+		// parsed template is copied into cr.Body buffer
 		err3 := cr.ParseTemplate(dat, nil)
 		if err3 != nil {
 			log.Printf("Errors: %v, %v", err3, err2)
 			return cr.SendInternalError(w)
 		}
 
+		// write cr.Body buffer to the "wire"
 		return cr.WriteHTTPResponse(w)
 	}
 	return cr.SendNotFound(w, req.URL.Path)
