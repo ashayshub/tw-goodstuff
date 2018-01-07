@@ -15,6 +15,7 @@ const (
 )
 
 type TwApp struct {
+	ConfigFile        string
 	ConsumerKey       string `yaml:"consumerKey"`
 	ConsumerSecret    string `yaml:"consumerSecret"`
 	AccessToken       string `yaml:"accessToken"`
@@ -23,7 +24,7 @@ type TwApp struct {
 }
 
 func (t *TwApp) LoadConfig() error {
-	data, err := ioutil.ReadFile(ConfigFile)
+	data, err := ioutil.ReadFile(t.ConfigFile)
 	confErrMsg := "Fatal error: Could not read app config"
 	if err != nil {
 		return errors.Wrap(err, confErrMsg)

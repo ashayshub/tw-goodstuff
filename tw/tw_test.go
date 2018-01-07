@@ -8,6 +8,7 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	a := &tw.TwApp{
+		"../conf.yaml.example",
 		"",
 		"",
 		"",

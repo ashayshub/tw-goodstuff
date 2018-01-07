@@ -36,6 +36,7 @@ type Handler struct{}
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	app := &tw.TwApp{}
+	app.ConfigFile = "./conf.yaml.example"
 	cr := &ContentResponse{}
 
 	//Startup errors
