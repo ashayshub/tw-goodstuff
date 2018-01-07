@@ -63,15 +63,22 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
+	case "/login":
+		if ok := cr.LoginPage(w, req, app); !ok {
+			cr.SendInternalError(w)
+			return
+		}
+
 	default:
 		cr.SendNotFound(w, req.URL.Path)
 	}
 }
 
 type ContentResponse struct {
-	Status int
-	Body   bytes.Buffer
-	Hdr    http.Header
+	Status   int
+	Body     bytes.Buffer
+	Hdr      http.Header
+	TmplFile string
 }
 
 func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
@@ -97,30 +104,42 @@ func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request, app 
 func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodGet {
 		cr.Hdr = w.Header()
-		tmplFile := "./tmpl/home.tmpl"
-		err := app.Auth()
-		if err == nil {
-			cr.Status = 302
-			cr.Hdr.Set("Location", "/rt")
-			cr.Body.Write([]byte{})
-			return cr.WriteHTTPResponse(w)
+		cr.TmplFile = "./tmpl/home.tmpl"
+
+		ok, err := app.IsLoggedIn(req)
+		if err != nil {
+			// ok will remain false
+			log.Printf("Error: %v", err)
 		}
 
-		dat, err2 := ioutil.ReadFile(tmplFile)
-		if err2 != nil {
-			log.Printf("Method: Get, Error reading template file. Error: %v", err2)
-			return cr.SendInternalError(w)
+		if ok {
+			return cr.SendRedirect(w, "/rt")
 		}
 
-		// parsed template is copied into cr.Body buffer
-		err3 := cr.ParseTemplate(dat, nil)
-		if err3 != nil {
-			log.Printf("Errors: %v, %v", err3, err2)
+		if err := cr.ReadParseTmpl(); err != nil {
 			return cr.SendInternalError(w)
 		}
 
 		// write cr.Body buffer to the "wire"
 		return cr.WriteHTTPResponse(w)
+	}
+	return cr.SendNotFound(w, req.URL.Path)
+}
+
+func (cr *ContentResponse) LoginPage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
+	if req.Method == http.MethodPost {
+		cr.Hdr = w.Header()
+
+		ok, err := app.IsLoggedIn(req)
+		if err != nil {
+			// ok will remain false
+			log.Printf("Error: %v", err)
+		}
+
+		if ok {
+			return cr.SendRedirect(w, "/")
+		}
+		return cr.SendRedirect(w, "/rt")
 	}
 	return cr.SendNotFound(w, req.URL.Path)
 }
@@ -137,13 +156,34 @@ func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
 	return cr.WriteHTTPResponse(w)
 }
 
+func (cr *ContentResponse) SendRedirect(w http.ResponseWriter, url string) (ok bool) {
+	cr.Status = 302
+	cr.Hdr.Set("Location", url)
+	cr.Body.Write([]byte{})
+	return cr.WriteHTTPResponse(w)
+}
+
 func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
 	w.WriteHeader(cr.Status)
 	cr.Body.WriteTo(w)
 	return true
 }
 
-func (cr *ContentResponse) ParseTemplate(b []byte, data interface{}) (err error) {
+func (cr *ContentResponse) ReadParseTmpl() error {
+	dat, err2 := ioutil.ReadFile(cr.TmplFile)
+	if err2 != nil {
+		return errors.Wrap(err2, "Method: Get, Error reading template file")
+	}
+
+	// Parsed template is copied into cr.Body buffer
+	err3 := cr.ParseTmpl(dat, nil)
+	if err3 != nil {
+		return err3
+	}
+	return nil
+}
+
+func (cr *ContentResponse) ParseTmpl(b []byte, data interface{}) (err error) {
 
 	tmpl, err := template.New("HTML").Parse(string(b))
 	if err != nil {

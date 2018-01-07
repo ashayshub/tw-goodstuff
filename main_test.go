@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -41,6 +42,16 @@ func TestHomePage(t *testing.T) {
 	}
 }
 
+func TestLoginPage(t *testing.T) {
+	a := &tw.TwApp{}
+	w := httptest.NewRecorder()
+	cr := &main.ContentResponse{}
+	req := httptest.NewRequest(http.MethodPost, "http://localhost:8333/rt", nil)
+	if ok := cr.LoginPage(w, req, a); !(cr.Status == http.StatusOK || cr.Status == http.StatusFound) || !ok {
+		t.Fail()
+	}
+}
+
 func TestWriteHTTPResponse(t *testing.T) {
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
@@ -73,11 +84,23 @@ func TestSendNotFound(t *testing.T) {
 	}
 }
 
-func TestParseTemplate(t *testing.T) {
+func TestParseTmpl(t *testing.T) {
 	data := []byte("Hello Testing")
 	cr := &main.ContentResponse{}
 	cr.Hdr = make(http.Header)
-	if err := cr.ParseTemplate(data, nil); err != nil {
+
+	if err := cr.ParseTmpl(data, nil); err != nil {
+		log.Println(err)
+		t.Fail()
+	}
+}
+
+func TestReadParseTmpl(t *testing.T) {
+	cr := &main.ContentResponse{}
+	cr.Hdr = make(http.Header)
+	cr.TmplFile = "./tmpl/home.tmpl"
+	if err := cr.ReadParseTmpl(); err != nil {
+		log.Println(err)
 		t.Fail()
 	}
 }
