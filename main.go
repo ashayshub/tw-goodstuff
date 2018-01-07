@@ -115,7 +115,7 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 		err3 := cr.ParseTemplate(dat, nil)
 		if err3 != nil {
 			log.Printf("Errors: %v, %v", err3, err2)
-			cr.SendInternalError(w)
+			return cr.SendInternalError(w)
 		}
 
 		return cr.WriteHTTPResponse(w)
