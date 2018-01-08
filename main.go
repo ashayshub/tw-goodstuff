@@ -50,29 +50,21 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	case "/fav":
 		if ok := cr.FavPage(w, req, app); !ok {
 			log.Println("Error Sending Fav Page")
-			cr.SendInternalError(w)
-			return
 		}
 
 	case "/rt":
 		if ok := cr.RTPage(w, req, app); !ok {
 			log.Println("Error Sending RT Page")
-			cr.SendInternalError(w)
-			return
 		}
 
 	case "/":
 		if ok := cr.HomePage(w, req, app); !ok {
 			log.Println("Error Sending Home Page")
-			cr.SendInternalError(w)
-			return
 		}
 
 	case "/login":
 		if ok := cr.LoginPage(w, req, app); !ok {
 			log.Println("Error Sending Login Page")
-			cr.SendInternalError(w)
-			return
 		}
 
 	default:
