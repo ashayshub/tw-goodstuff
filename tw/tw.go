@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ConfigFile string = "./conf.yaml"
+	ConfigFile string = "./conf.yaml.example"
 )
 
 var (
