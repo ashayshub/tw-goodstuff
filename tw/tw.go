@@ -4,34 +4,34 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/dghubble/go-twitter/twitter"
+	"github.com/dghubble/oauth1"
+	twitter2 "github.com/dghubble/oauth1/twitter"
 	"github.com/gorilla/sessions"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 	yaml "gopkg.in/yaml.v2"
 )
 
-var (
-	store = sessions.NewCookieStore([]byte("something-very-secret"))
+const (
+	ConfigFile string = "./conf.yaml"
 )
 
-const (
-	ConfigFile string = "./conf.yaml.example"
+var (
+	SessionPath string = "./tmp/sessions"
+	store              = sessions.NewFilesystemStore(SessionPath, []byte("something-very-secret"))
 )
 
 type TwApp struct {
 	ConfigFile        string
 	ConsumerKey       string `yaml:"consumerKey"`
 	ConsumerSecret    string `yaml:"consumerSecret"`
-	AccessToken       string `yaml:"accessToken"`
-	AccessTokenSecret string `yaml:"accessTokenSecret"`
 	RedirectURL       string `yaml:"redirectURL"`
+	AccessToken       string
+	AccessTokenSecret string
 }
 
 func (t *TwApp) LoadConfig() error {
+	confErrMsg := "Fatal error: Could not read app config or some/all params empty"
 	data, err := ioutil.ReadFile(t.ConfigFile)
-	confErrMsg := "Fatal error: Could not read app config"
 	if err != nil {
 		return errors.Wrap(err, confErrMsg)
 	}
@@ -39,23 +39,65 @@ func (t *TwApp) LoadConfig() error {
 	if err := yaml.Unmarshal(data, t); err != nil {
 		return errors.Wrap(err, confErrMsg)
 	}
+
+	if t.ConsumerKey == "" || t.ConsumerSecret == "" {
+		return errors.New(confErrMsg)
+	}
+
 	return nil
 }
 
-func (t *TwApp) Auth() error {
-	config := &clientcredentials.Config{
-		ClientID:       t.ConsumerKey,
-		ClientSecret:   t.ConsumerSecret,
-		TokenURL:       "https://api.twitter.com/oauth2/token",
-		Scopes:         nil,
-		EndpointParams: nil,
+func (t *TwApp) CreateConfig() oauth1.Config {
+	return oauth1.Config{
+		ConsumerKey:    t.ConsumerKey,
+		ConsumerSecret: t.ConsumerSecret,
+		CallbackURL:    t.RedirectURL,
+		Endpoint:       twitter2.AuthorizeEndpoint,
+	}
+}
+
+func (t *TwApp) FetchRequestToken() (string, error) {
+	c := t.CreateConfig()
+	requestToken, _, err := c.RequestToken()
+	if err != nil {
+		return "", errors.Wrap(err, "Error during c.RequestToken()")
 	}
 
-	httpClient := config.Client(oauth2.NoContext)
-	twitter.NewClient(httpClient)
+	authorizationURL, err := c.AuthorizationURL(requestToken)
+	if err != nil {
+		return "", errors.Wrap(err, "Error during c.AuthorizationURL()")
+	}
 
-	return errors.New("twitter  error")
-	// return nil
+	return authorizationURL.String(), nil
+}
+
+func (t *TwApp) Auth(w http.ResponseWriter, req *http.Request) (err error) {
+	c := t.CreateConfig()
+	v := req.URL.Query()
+
+	oauth_token := v.Get("oauth_token")
+	oauth_verifier := v.Get("oauth_verifier")
+
+	if oauth_token == "" || oauth_verifier == "" {
+		return errors.New("Empty: oauth_token or oauth_verifier")
+	}
+
+	t.AccessToken, t.AccessTokenSecret, err = c.AccessToken(oauth_token, t.ConsumerSecret, oauth_verifier)
+	token := oauth1.NewToken(t.AccessToken, t.AccessTokenSecret)
+
+	// Save token to session
+	session, err := store.Get(req, "tw-goodstuff")
+	session.Values["IsLoggedIn"] = true
+	session.Values["Token"] = token.Token
+	session.Values["TokenSecret"] = token.TokenSecret
+
+	if err := session.Save(req, w); err != nil {
+		return errors.Wrap(err, "Error saving the session")
+	}
+
+	// httpClient := config.Client(oauth1.NoContext, token)
+	// client := twitter.NewClient(httpClient)
+	return nil
 }
 
 func (t *TwApp) IsLoggedIn(req *http.Request) (bool, error) {
@@ -79,6 +121,9 @@ func (t *TwApp) Logout(w http.ResponseWriter, req *http.Request) (bool, error) {
 	}
 
 	session.Options.MaxAge = -1
-	session.Save(req, w)
+	if err := session.Save(req, w); err != nil {
+		return false, errors.Wrap(err, "Error saving the session")
+	}
+
 	return true, nil
 }

@@ -36,8 +36,10 @@ type Handler struct{}
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	app := &tw.TwApp{}
-	app.ConfigFile = "./conf.yaml.example"
+	app.ConfigFile = tw.ConfigFile
 	cr := &ContentResponse{}
+	cr.Hdr = w.Header()
+	cr.TmplFile = "./tmpl/home.tmpl"
 
 	//Startup errors
 	if err := app.LoadConfig(); err != nil {
@@ -47,24 +49,28 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
 	case "/fav":
 		if ok := cr.FavPage(w, req, app); !ok {
+			log.Println("Error Sending Fav Page")
 			cr.SendInternalError(w)
 			return
 		}
 
 	case "/rt":
 		if ok := cr.RTPage(w, req, app); !ok {
+			log.Println("Error Sending RT Page")
 			cr.SendInternalError(w)
 			return
 		}
 
 	case "/":
 		if ok := cr.HomePage(w, req, app); !ok {
+			log.Println("Error Sending Home Page")
 			cr.SendInternalError(w)
 			return
 		}
 
 	case "/login":
 		if ok := cr.LoginPage(w, req, app); !ok {
+			log.Println("Error Sending Login Page")
 			cr.SendInternalError(w)
 			return
 		}
@@ -85,7 +91,6 @@ func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request, app
 	if req.Method == http.MethodGet {
 		cr.Body.Write([]byte(req.URL.Path))
 		cr.Status = http.StatusOK
-		cr.Hdr = w.Header()
 		return cr.WriteHTTPResponse(w)
 	}
 	return cr.SendNotFound(w, req.URL.Path)
@@ -95,7 +100,6 @@ func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request, app 
 	if req.Method == http.MethodGet {
 		cr.Body.Write([]byte(req.URL.Path))
 		cr.Status = http.StatusOK
-		cr.Hdr = w.Header()
 		return cr.WriteHTTPResponse(w)
 	}
 	return cr.SendNotFound(w, req.URL.Path)
@@ -103,8 +107,6 @@ func (cr *ContentResponse) RTPage(w http.ResponseWriter, req *http.Request, app 
 
 func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodGet {
-		cr.Hdr = w.Header()
-		cr.TmplFile = "./tmpl/home.tmpl"
 
 		ok, err := app.IsLoggedIn(req)
 		if err != nil {
@@ -117,6 +119,7 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 		}
 
 		if err := cr.ReadParseTmpl(); err != nil {
+			log.Println(err)
 			return cr.SendInternalError(w)
 		}
 
@@ -128,8 +131,6 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 
 func (cr *ContentResponse) LoginPage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
 	if req.Method == http.MethodPost {
-		cr.Hdr = w.Header()
-
 		ok, err := app.IsLoggedIn(req)
 		if err != nil {
 			// ok will remain false
@@ -139,8 +140,25 @@ func (cr *ContentResponse) LoginPage(w http.ResponseWriter, req *http.Request, a
 		if ok {
 			return cr.SendRedirect(w, "/")
 		}
+
+		authURL, err := app.FetchRequestToken()
+		if err != nil {
+			log.Println(err)
+			return cr.SendRedirect(w, "/")
+		}
+
+		cr.Status = http.StatusOK
+		cr.Body.Write([]byte(authURL))
+		return cr.WriteHTTPResponse(w)
+
+	} else if req.Method == http.MethodGet {
+		if err := app.Auth(w, req); err != nil {
+			log.Println(err)
+			return cr.SendRedirect(w, "/")
+		}
 		return cr.SendRedirect(w, "/rt")
 	}
+
 	return cr.SendNotFound(w, req.URL.Path)
 }
 
@@ -153,7 +171,9 @@ func (cr *ContentResponse) SendNotFound(w http.ResponseWriter, url string) (ok b
 func (cr *ContentResponse) SendInternalError(w http.ResponseWriter) (ok bool) {
 	cr.Status = http.StatusInternalServerError
 	cr.Body.Write([]byte("Internal Server Error"))
-	return cr.WriteHTTPResponse(w)
+	cr.WriteHTTPResponse(w)
+	// To handle tests
+	return false
 }
 
 func (cr *ContentResponse) SendRedirect(w http.ResponseWriter, url string) (ok bool) {

@@ -1,10 +1,10 @@
 <html>
-        <head>
-                <title> Tw Goodstuff</title>
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">                
-        </head>
-        <body>
-        <div class="container">
+  <head>
+    <title> Tw Goodstuff</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">                
+  </head>
+  <body>
+    <div class="container">
       <header class="header clearfix">
         <nav>
           <ul class="nav nav-pills float-right">
@@ -23,47 +23,67 @@
       </header>
 
       <main role="main">
-
+        
         <div class="jumbotron">
           <h1 class="display-3">TW-GoodStuff</h1>
           <p class="lead">Will show the recent most RT'ed and Fav'ed tweets</p>
-          <p><a class="" href="#" role="button"><img src="https://g.twimg.com/dev/sites/default/files/images_documentation/sign-in-with-twitter-gray.png"/></a></p>
+          <p>
+            <a class="myLogin" href="#" role="button"><img src="https://g.twimg.com/dev/sites/default/files/images_documentation/sign-in-with-twitter-gray.png"/></a></p>
         </div>
-
+        
         <div class="row marketing">
           <div class="col-lg-6">
             <h4>Subheading</h4>
             <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
-
+            
             <h4>Subheading</h4>
             <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
-
+            
             <h4>Subheading</h4>
             <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
           </div>
-
+          
           <div class="col-lg-6">
             <h4>Subheading</h4>
             <p>Donec id elit non mi porta gravida at eget metus. Maecenas faucibus mollis interdum.</p>
-
+            
             <h4>Subheading</h4>
             <p>Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Cras mattis consectetur purus sit amet fermentum.</p>
-
+            
             <h4>Subheading</h4>
             <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
           </div>
         </div>
-
-      </main>
-
-      <footer class="footer">
-        <p>© Company 2017</p>
-      </footer>
-
-    </div>
         
-       <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js" integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4" crossorigin="anonymous"></script>
-        </body>
+      </main>
+      
+      <footer class="footer">
+        <p>©Ashay 2017</p>
+      </footer>
+      
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js" integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4" crossorigin="anonymous"></script>
+    <script>
+      $('.myLogin').click(function(event){
+          event.preventDefault();
+          $.ajaxSetup({
+            crossDomain: true
+          });
+          var jqxhr = $.post('/login')
+                .done(function(data){
+                     // Contract sys a 302 redirect
+                     alert(data);
+                     window.location = data;
+                })
+                .fail(function(xhr, status, error){
+                     // Contract sys a 302 redirect
+                     console.log(xhr, status, error);
+                     <!-- alert("Error logging in" + status + error); -->
+                     <!-- window.location.href = data; -->
+                });
+      });
+    </script>
+  </body>
 </html>

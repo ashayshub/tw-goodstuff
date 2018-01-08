@@ -12,42 +12,57 @@ import (
 	"github.com/ashayshub/tw-goodstuff/tw"
 )
 
+var (
+	a = &tw.TwApp{
+		"./conf.yaml.example",
+		"",
+		"",
+		"",
+		"",
+		"",
+	}
+)
+
 func TestFavPage(t *testing.T) {
-	a := &tw.TwApp{}
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 	req := httptest.NewRequest(http.MethodGet, "http://localhost:8333/fav", nil)
 	if ok := cr.FavPage(w, req, a); cr.Status != http.StatusOK || !ok {
+		log.Println("Test failed")
 		t.Fail()
 	}
 }
 
 func TestRTPage(t *testing.T) {
-	a := &tw.TwApp{}
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 	req := httptest.NewRequest(http.MethodGet, "http://localhost:8333/rt", nil)
 	if ok := cr.RTPage(w, req, a); cr.Status != http.StatusOK || !ok {
+		log.Println("Test failed")
 		t.Fail()
 	}
 }
 
 func TestHomePage(t *testing.T) {
-	a := &tw.TwApp{}
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
+	cr.TmplFile = "./tmpl/home.tmpl"
+	cr.Hdr = w.Header()
 	req := httptest.NewRequest(http.MethodGet, "http://localhost:8333/", nil)
 	if ok := cr.HomePage(w, req, a); !(cr.Status == http.StatusFound || cr.Status == http.StatusOK) || !ok {
+		log.Println("Test failed")
 		t.Fail()
 	}
 }
 
 func TestLoginPage(t *testing.T) {
-	a := &tw.TwApp{}
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
-	req := httptest.NewRequest(http.MethodPost, "http://localhost:8333/rt", nil)
+	cr.Hdr = w.Header()
+	a.LoadConfig()
+	req := httptest.NewRequest(http.MethodPost, "http://localhost:8333/login", nil)
 	if ok := cr.LoginPage(w, req, a); !(cr.Status == http.StatusOK || cr.Status == http.StatusFound) || !ok {
+		log.Println("Test failed")
 		t.Fail()
 	}
 }
@@ -62,6 +77,18 @@ func TestWriteHTTPResponse(t *testing.T) {
 	cr.Body.Write([]byte("200 Ok"))
 
 	if ok := cr.WriteHTTPResponse(w); !ok {
+		log.Println("Test failed")
+		t.Fail()
+	}
+}
+
+func TestSendRedirect(t *testing.T) {
+	w := httptest.NewRecorder()
+	cr := &main.ContentResponse{}
+	cr.Hdr = w.Header()
+
+	if ok := cr.SendRedirect(w, "/rt"); !ok {
+		log.Println("Test failed")
 		t.Fail()
 	}
 }
@@ -70,7 +97,8 @@ func TestSendInternalError(t *testing.T) {
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 
-	if ok := cr.SendInternalError(w); !ok {
+	if ok := cr.SendInternalError(w); ok {
+		log.Println("Error: SendInternalError Should always fail")
 		t.Fail()
 	}
 }
@@ -79,7 +107,8 @@ func TestSendNotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	cr := &main.ContentResponse{}
 
-	if ok := cr.SendInternalError(w); !ok {
+	if ok := cr.SendNotFound(w, "/notFound"); !ok {
+		log.Println("Test failed")
 		t.Fail()
 	}
 }
