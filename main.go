@@ -37,6 +37,7 @@ type Handler struct{}
 func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	app := &tw.TwApp{}
 	app.ConfigFile = tw.ConfigFile
+
 	cr := &ContentResponse{}
 	cr.Hdr = w.Header()
 	cr.TmplFile = "./tmpl/home.tmpl"
@@ -107,6 +108,12 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 		}
 
 		if ok {
+			tweets, err := app.GetFavRT(req)
+			if err != nil {
+				log.Println(err)
+				return cr.SendRedirect(w, "/")
+			}
+			log.Println(tweets)
 			return cr.SendRedirect(w, "/rt")
 		}
 

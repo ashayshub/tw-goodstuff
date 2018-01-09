@@ -2,8 +2,10 @@ package tw
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 
+	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 	twitter2 "github.com/dghubble/oauth1/twitter"
 	"github.com/gorilla/sessions"
@@ -12,7 +14,7 @@ import (
 )
 
 const (
-	ConfigFile string = "./conf.yaml.example"
+	ConfigFile string = "./conf.yaml"
 )
 
 var (
@@ -95,8 +97,6 @@ func (t *TwApp) Auth(w http.ResponseWriter, req *http.Request) (err error) {
 		return errors.Wrap(err, "Error saving the session")
 	}
 
-	// httpClient := config.Client(oauth1.NoContext, token)
-	// client := twitter.NewClient(httpClient)
 	return nil
 }
 
@@ -124,6 +124,35 @@ func (t *TwApp) Logout(w http.ResponseWriter, req *http.Request) (bool, error) {
 	if err := session.Save(req, w); err != nil {
 		return false, errors.Wrap(err, "Error saving the session")
 	}
+
+	return true, nil
+}
+
+func (t *TwApp) GetFavRT(req *http.Request) (ok bool, err error) {
+	var ok1, ok2 bool
+
+	session, err := store.Get(req, "tw-goodstuff")
+	if err != nil {
+		return false, errors.Wrap(err, "Error retrieving session")
+	}
+
+	t.AccessToken, ok1 = session.Values["Token"].(string)
+	t.AccessTokenSecret, ok2 = session.Values["TokenSecret"].(string)
+
+	if !(ok1 && ok2) {
+		return false, errors.New("Error retrieving Access Token and Secret from session")
+	}
+
+	log.Println(t.AccessToken, t.AccessTokenSecret)
+
+	c := t.CreateConfig()
+
+	token := oauth1.NewToken(t.AccessToken, t.AccessTokenSecret)
+	httpClient := c.Client(oauth1.NoContext, token)
+	client := twitter.NewClient(httpClient)
+
+	tweets, _, _ := client.Timelines.HomeTimeline(&twitter.HomeTimelineParams{})
+	log.Println(tweets)
 
 	return true, nil
 }
