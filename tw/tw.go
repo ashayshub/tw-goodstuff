@@ -106,11 +106,11 @@ func (t *TwApp) IsLoggedIn(req *http.Request) (bool, error) {
 		return false, errors.Wrap(err, "Error retrieving session")
 	}
 
-	if _, ok := session.Values["IsLoggedIn"]; ok {
-		return true, nil
+	if _, ok := session.Values["IsLoggedIn"]; !ok {
+		return false, nil
 	}
 
-	return false, nil
+	return true, nil
 }
 
 func (t *TwApp) Logout(w http.ResponseWriter, req *http.Request) (bool, error) {
