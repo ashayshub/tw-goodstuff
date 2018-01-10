@@ -73,15 +73,11 @@
           });
           var jqxhr = $.post('/login')
                 .done(function(data){
-                     // Contract sys a 302 redirect
-                     alert(data);
+                     // data is a remote URL to redirect to
                      window.location = data;
                 })
                 .fail(function(xhr, status, error){
-                     // Contract sys a 302 redirect
                      console.log(xhr, status, error);
-                     <!-- alert("Error logging in" + status + error); -->
-                     <!-- window.location.href = data; -->
                 });
       });
     </script>

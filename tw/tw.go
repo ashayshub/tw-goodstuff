@@ -106,53 +106,62 @@ func (t *TwApp) IsLoggedIn(req *http.Request) (bool, error) {
 		return false, errors.Wrap(err, "Error retrieving session")
 	}
 
-	if _, ok := session.Values["IsLoggedIn"]; !ok {
-		return false, nil
+	resp, ok := session.Values["IsLoggedIn"].(bool)
+	if !ok {
+		return resp, nil
 	}
-
-	return true, nil
+	log.Println(resp)
+	return resp, nil
 }
 
-func (t *TwApp) Logout(w http.ResponseWriter, req *http.Request) (bool, error) {
+func (t *TwApp) Logout(w http.ResponseWriter, req *http.Request) error {
 
 	session, err := store.Get(req, "tw-goodstuff")
 	if err != nil {
-		return false, errors.Wrap(err, "Error retrieving/creating session")
+		return errors.Wrap(err, "Error retrieving/creating session")
 	}
 
 	session.Options.MaxAge = -1
 	if err := session.Save(req, w); err != nil {
-		return false, errors.Wrap(err, "Error saving the session")
+		return errors.Wrap(err, "Error saving the session")
 	}
 
-	return true, nil
+	return nil
 }
 
-func (t *TwApp) GetFavRT(req *http.Request) (ok bool, err error) {
+func (t *TwApp) GetTwSession(req *http.Request) (*twitter.Client, error) {
 	var ok1, ok2 bool
+	client := &twitter.Client{}
 
 	session, err := store.Get(req, "tw-goodstuff")
 	if err != nil {
-		return false, errors.Wrap(err, "Error retrieving session")
+		return client, errors.Wrap(err, "Error retrieving session")
 	}
 
 	t.AccessToken, ok1 = session.Values["Token"].(string)
 	t.AccessTokenSecret, ok2 = session.Values["TokenSecret"].(string)
 
 	if !(ok1 && ok2) {
-		return false, errors.New("Error retrieving Access Token and Secret from session")
+		return client, errors.New("Error retrieving Access Token and Secret from session")
 	}
 
-	log.Println(t.AccessToken, t.AccessTokenSecret)
-
 	c := t.CreateConfig()
-
 	token := oauth1.NewToken(t.AccessToken, t.AccessTokenSecret)
 	httpClient := c.Client(oauth1.NoContext, token)
-	client := twitter.NewClient(httpClient)
 
-	tweets, _, _ := client.Timelines.HomeTimeline(&twitter.HomeTimelineParams{})
+	return twitter.NewClient(httpClient), nil
+}
+
+func (t *TwApp) GetFavRT(req *http.Request) ([]twitter.Tweet, error) {
+	var tweets []twitter.Tweet
+
+	client, err := t.GetTwSession(req)
+	if err != nil {
+		return tweets, err
+	}
+
+	tweets, _, _ = client.Timelines.HomeTimeline(&twitter.HomeTimelineParams{})
 	log.Println(tweets)
 
-	return true, nil
+	return tweets, nil
 }

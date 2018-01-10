@@ -61,8 +61,8 @@ func TestIsLoggedIn(t *testing.T) {
 
 func TestLogout(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "http://localhost:8333/", nil)
-	ok, err := a.IsLoggedIn(req)
-	if !(err == nil || ok == true) {
+	_, err := a.IsLoggedIn(req)
+	if err != nil {
 		log.Println(err)
 		t.Fail()
 	}
@@ -70,12 +70,16 @@ func TestLogout(t *testing.T) {
 
 func TestGetFavRT(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "http://localhost:8333/", nil)
-	ok, err := a.GetFavRT(req)
-	if !(err == nil || ok == true) {
+	_, err := a.GetFavRT(req)
+	if err != nil {
 		log.Println(err)
 		log.Println("Deliberate skip for session check on test")
 		// deliberate skip for session check on test, since using dummy config for test
 		// t.Fail()
 
 	}
+}
+
+func TestGetTwSession(t *testing.T) {
+
 }
