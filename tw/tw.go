@@ -2,7 +2,6 @@ package tw
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/dghubble/go-twitter/twitter"
@@ -110,7 +109,6 @@ func (t *TwApp) IsLoggedIn(req *http.Request) (bool, error) {
 	if !ok {
 		return resp, nil
 	}
-	log.Println(resp)
 	return resp, nil
 }
 
@@ -152,16 +150,19 @@ func (t *TwApp) GetTwSession(req *http.Request) (*twitter.Client, error) {
 	return twitter.NewClient(httpClient), nil
 }
 
-func (t *TwApp) GetFavRT(req *http.Request) ([]twitter.Tweet, error) {
+func (t *TwApp) GetFavRT(req *http.Request) ([]twitter.Tweet, []twitter.Tweet, error) {
 	var tweets []twitter.Tweet
 
 	client, err := t.GetTwSession(req)
 	if err != nil {
-		return tweets, err
+		return tweets, tweets, err
 	}
 
 	tweets, _, _ = client.Timelines.HomeTimeline(&twitter.HomeTimelineParams{})
-	log.Println(tweets)
 
-	return tweets, nil
+	return tweets, tweets, nil
+}
+
+func (t *TwApp) GetTwUser(req *http.Request) (string, error) {
+	return "", nil
 }

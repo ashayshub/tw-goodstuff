@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/ashayshub/tw-goodstuff/tw"
+	"github.com/dghubble/go-twitter/twitter"
 	"github.com/pkg/errors"
 )
 
@@ -78,6 +79,9 @@ type ContentResponse struct {
 	Body     bytes.Buffer
 	Hdr      http.Header
 	TmplFile string
+	TwUser   string
+	TwFav    []twitter.Tweet
+	TwRT     []twitter.Tweet
 }
 
 func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
@@ -108,13 +112,24 @@ func (cr *ContentResponse) HomePage(w http.ResponseWriter, req *http.Request, ap
 		}
 
 		if ok {
-			tweets, err := app.GetFavRT(req)
+			cr.TwFav, cr.TwRT, err = app.GetFavRT(req)
 			if err != nil {
 				log.Println(err)
 				return cr.SendRedirect(w, "/")
 			}
-			log.Println(tweets)
-			return cr.SendRedirect(w, "/rt")
+
+			cr.TwUser, err = app.GetTwUser(req)
+			if err != nil {
+				log.Println(err)
+				return cr.SendRedirect(w, "/")
+			}
+
+			if err := cr.ReadParseTmpl(); err != nil {
+				log.Println(err)
+				return cr.SendInternalError(w)
+			}
+
+			return cr.WriteHTTPResponse(w)
 		}
 
 		if err := cr.ReadParseTmpl(); err != nil {
@@ -189,20 +204,20 @@ func (cr *ContentResponse) WriteHTTPResponse(w http.ResponseWriter) (ok bool) {
 }
 
 func (cr *ContentResponse) ReadParseTmpl() error {
-	dat, err2 := ioutil.ReadFile(cr.TmplFile)
-	if err2 != nil {
-		return errors.Wrap(err2, "Method: Get, Error reading template file")
+	b, err := ioutil.ReadFile(cr.TmplFile)
+	if err != nil {
+		return errors.Wrap(err, "Method: Get, Error reading template file")
 	}
 
 	// Parsed template is copied into cr.Body buffer
-	err3 := cr.ParseTmpl(dat, nil)
-	if err3 != nil {
-		return err3
+	err2 := cr.ParseTmpl(b)
+	if err2 != nil {
+		return err2
 	}
 	return nil
 }
 
-func (cr *ContentResponse) ParseTmpl(b []byte, data interface{}) (err error) {
+func (cr *ContentResponse) ParseTmpl(b []byte) (err error) {
 
 	tmpl, err := template.New("HTML").Parse(string(b))
 	if err != nil {
@@ -211,7 +226,7 @@ func (cr *ContentResponse) ParseTmpl(b []byte, data interface{}) (err error) {
 
 	cr.Status = http.StatusOK
 	cr.Hdr.Set("Content-Type", "text/html")
-	err = tmpl.Execute(&cr.Body, data)
+	err = tmpl.Execute(&cr.Body, cr)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Method: Get, Error Executing template file"))
 	}

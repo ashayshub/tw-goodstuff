@@ -118,7 +118,7 @@ func TestParseTmpl(t *testing.T) {
 	cr := &main.ContentResponse{}
 	cr.Hdr = make(http.Header)
 
-	if err := cr.ParseTmpl(data, nil); err != nil {
+	if err := cr.ParseTmpl(data); err != nil {
 		log.Println(err)
 		t.Fail()
 	}
