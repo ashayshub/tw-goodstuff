@@ -67,6 +67,7 @@
           var jqxhr = $.post('/login')
                 .done(function(data){
                      // data is a remote URL to redirect to
+                     alert('Hello: '+data );
                      window.location = data;
                 })
                 .fail(function(xhr, status, error){

@@ -152,13 +152,15 @@ func (cr *ContentResponse) LoginPage(w http.ResponseWriter, req *http.Request, a
 		}
 
 		if ok {
-			return cr.SendRedirect(w, "/")
+			cr.Status = http.StatusOK
+			cr.Body.Write([]byte("/"))
+			return cr.WriteHTTPResponse(w)
 		}
 
 		authURL, err := app.FetchRequestToken()
 		if err != nil {
 			log.Println(err)
-			return cr.SendRedirect(w, "/")
+			return cr.SendInternalError(w)
 		}
 
 		cr.Status = http.StatusOK
@@ -168,9 +170,9 @@ func (cr *ContentResponse) LoginPage(w http.ResponseWriter, req *http.Request, a
 	} else if req.Method == http.MethodGet {
 		if err := app.Auth(w, req); err != nil {
 			log.Println(err)
-			return cr.SendRedirect(w, "/")
+			return cr.SendInternalError(w)
 		}
-		return cr.SendRedirect(w, "/rt")
+		return cr.SendRedirect(w, "/")
 	}
 
 	return cr.SendNotFound(w, req.URL.Path)
