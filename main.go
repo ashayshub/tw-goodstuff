@@ -75,13 +75,16 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 type ContentResponse struct {
-	Status   int
-	Body     bytes.Buffer
 	Hdr      http.Header
+	Body     bytes.Buffer
+	Status   int
 	TmplFile string
-	TwUser   string
-	TwFav    []twitter.Tweet
-	TwRT     []twitter.Tweet
+
+	// Template parser values
+	TwLoggedIn bool
+	TwUser     string
+	TwFav      []twitter.Tweet
+	TwRT       []twitter.Tweet
 }
 
 func (cr *ContentResponse) FavPage(w http.ResponseWriter, req *http.Request, app *tw.TwApp) (ok bool) {
@@ -147,8 +150,8 @@ func (cr *ContentResponse) LoginPage(w http.ResponseWriter, req *http.Request, a
 	if req.Method == http.MethodPost {
 		ok, err := app.IsLoggedIn(req)
 		if err != nil {
-			// ok will remain false
-			log.Printf("Error: %v", err)
+			log.Println("Error:", err)
+			return cr.SendInternalError(w)
 		}
 
 		if ok {
